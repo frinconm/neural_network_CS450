@@ -6,6 +6,8 @@ from math import exp
 from random import random
 from matplotlib import pyplot as plt
 import pandas as pd
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import KFold
 
 
 class NeuralNetworkModel:
@@ -134,26 +136,48 @@ class NeuralNetworkClassifier:
 # Iris dataset
 iris = datasets.load_iris()
 
-# Preparing training / test sets
-data_train, data_test, target_train, target_test = train_test_split(iris.data, iris.target, test_size=0.25, shuffle=True)
-classifier = NeuralNetworkClassifier()
-model, graph = classifier.fit(data_train, target_train, 4, 3, 0.08, 1000)
-targets = model.predict(data_test)
-
-corrects = 0
-
-for x in range(len(target_test)):
-    if (target_test[x] == targets[x]):
-        corrects += 1
+my_classifier_accuracy = 0
+scikit_classifier_accuracy = 0
+kf = KFold(n_splits=10, shuffle=True)
 
 print("Iris dataset")
-print("Accuracy: {}".format(corrects / len(target_test)))
+for train, test in kf.split(iris.data):
+    data_train, data_test, target_train, target_test = iris.data[train], iris.data[test], iris.target[train], iris.target[test]
 
-plt.plot(graph)
-plt.ylabel('Accuracy')
-plt.xlabel('Loop')
-plt.title('Iris')
-plt.show()
+    classifier = NeuralNetworkClassifier()
+    model, graph = classifier.fit(data_train, target_train, 4, 3, 0.08, 1000)
+    targets = model.predict(data_test)
+
+    corrects = 0
+
+    for x in range(len(target_test)):
+        if (target_test[x] == targets[x]):
+            corrects += 1
+
+    print("Accuracy: {}".format(corrects / len(target_test)))
+
+    my_classifier_accuracy += corrects / len(target_test)
+    plt.plot(graph)
+    plt.ylabel('Accuracy')
+    plt.xlabel('Loop')
+    plt.title('Iris')
+    plt.show()
+
+    mlp = MLPClassifier(hidden_layer_sizes=(4), learning_rate_init=0.08, max_iter=1000)
+    mlp.fit(data_train, target_train)
+    predictions = mlp.predict(data_test)
+
+    corrects = 0
+    for x in range(len(target_test)):
+        if (target_test[x] == predictions[x]):
+            corrects += 1
+
+    scikit_classifier_accuracy += corrects / len(target_test)
+
+print("My classifier accuracy: {}".format(my_classifier_accuracy / 10))
+print("Scikit classifier accuracy: {}".format(scikit_classifier_accuracy / 10))
+
+
 
 # Pima Indian Diabetes
 headers = ['times_pregnant', 'glucose', 'blood_pressure', 'triceps', 'insulin'
@@ -178,23 +202,47 @@ data_std = std_scale.transform(data[['times_pregnant', 'glucose', 'blood_pressur
 # Getting target
 target = np.array(data['result'])
 
+scikit_classifier_accuracy = 0
+my_classifier_accuracy = 0
+
+print()
+print("Pima Indian Diabetes")
+
 # Preparing training / test sets
-data_train, data_test, target_train, target_test = train_test_split(data_std, target, test_size=0.25, shuffle=True)
-classifier = NeuralNetworkClassifier()
-model, graph = classifier.fit(data_train, target_train, 4, 2, 0.1, 1500)
-targets = model.predict(data_test)
+for train, test in kf.split(data_std):
+    data_train, data_test, target_train, target_test = data_std[train], data_std[test], target[train], target[test]
 
-corrects = 0
+    classifier = NeuralNetworkClassifier()
+    model, graph = classifier.fit(data_train, target_train, 4, 2, 0.1, 1500)
+    targets = model.predict(data_test)
 
-for x in range(len(target_test)):
-    if (target_test[x] == targets[x]):
-        corrects += 1
+    corrects = 0
 
-print("Pima Indian Diabetes dataset")
-print("Accuracy: {}".format(corrects / len(target_test)))
+    for x in range(len(target_test)):
+        if (target_test[x] == targets[x]):
+            corrects += 1
 
-plt.plot(graph)
-plt.ylabel('Accuracy')
-plt.xlabel('Loop')
-plt.title('Pima Indian Diabetes')
-plt.show()
+    print("Accuracy: {}".format(corrects / len(target_test)))
+
+    my_classifier_accuracy += corrects / len(target_test)
+    plt.plot(graph)
+    plt.ylabel('Accuracy')
+    plt.xlabel('Loop')
+    plt.title('Pima Indian Diabetes')
+    plt.show()
+
+    mlp = MLPClassifier(hidden_layer_sizes=(4), learning_rate_init=0.1, max_iter=1500)
+    mlp.fit(data_train, target_train)
+    predictions = mlp.predict(data_test)
+
+    corrects = 0
+    for x in range(len(target_test)):
+        if (target_test[x] == predictions[x]):
+            corrects += 1
+
+    scikit_classifier_accuracy += corrects / len(target_test)
+
+print("My classifier accuracy: {}".format(my_classifier_accuracy / 10))
+print("Scikit classifier accuracy: {}".format(scikit_classifier_accuracy / 10))
+
+
